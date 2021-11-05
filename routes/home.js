@@ -1,5 +1,6 @@
 var secrets = require('../config/secrets');
 const user = require('../models/user');
+const task = require('../models/task');
 
 module.exports = function (router) {
 
@@ -13,44 +14,92 @@ module.exports = function (router) {
     taskRoute.get(function (req, res) {
         task.find({})
             .then((data) => {
-                res.json({ "Tasks: ": data });
+                res.json({
+                    "message": "Ok",
+                    "data": data
+                });
             })
             .catch(err => {
-                res.status(404).send("Error: " + err);
+                res.json({
+                    "message": "error",
+                    "data": ""
+                });
             });
     });
 
-    taskRoute.post(function (req, res) {
-        var task = new task(req.body);
-        task.save((error) => {
-            if (error) {
-                console.log("darn");
-            } else {
-                console.log("saved!")
-            }
-        });
+    taskRoute.post(async function (req, res) {
+        var t = new task(req.body);
+        let result;
+
+        try {
+            result = await t.save()
+            res.json({ 
+                "message": "Ok",
+                "data": result 
+            })
+        } catch (err) {
+            const errors = err.errors;
+            Object.keys(errors).forEach(key => console.log(errors[key].message));
+            res.json({
+                "message": "error",
+                "data": ""
+            });
+        }
+        console.log(result)
+    });
+
+    var individualTaskRoute = router.route('/tasks/:id')
+    individualTaskRoute.get(function (req, res) {
+        var person = PersonModel.findById(request.params.id)
+            .then((data) => {
+                res.json({
+                    "message": "Ok",
+                    "data": data
+                })
+            }).catch(err => {
+                res.json({
+                    "message": "error",
+                    "data": ""
+                });
+            });
     });
 
     var userRoute = router.route('/users');
     userRoute.get(function (req, res) {
         user.find({})
             .then((data) => {
-                res.json({ "Users: ": data });
+                res.json({
+                    "message": "Ok",
+                    "data": data
+                })
             })
             .catch(err => {
-                res.status(404).send("Error: " + err);
+                res.json({
+                    "message": "error",
+                    "data": ""
+                });
             });
     });
 
-    userRoute.post(function (req, res) {
-        var task = new task(req.body);
-        user.save((error) => {
-            if (error) {
-                console.log("darn");
-            } else {
-                console.log("saved!")
-            }
-        });
+    userRoute.post(async function (req, res) {
+        var u = new user(req.body);
+        let result;
+
+        try {
+            result = await u.save()
+            res.json({ 
+                "message": "Ok",
+                "data": result 
+            })
+        } catch (err) {
+            const errors = err.errors;
+            Object.keys(errors).forEach(key => console.log(errors[key].message));
+            res.json({
+                "message": "error",
+                "data": ""
+            });
+        }
+        console.log(result)
     });
 
     var testRoute = router.route('/test');
@@ -62,7 +111,9 @@ module.exports = function (router) {
             email: 'test@gmail.com',
             pendingTasks: []
         }
+        console.log(Data);
         const testData = new user(Data)
+        console.log(testData)
         testData.save((error) => {
             if (error) {
                 console.log("darn");
