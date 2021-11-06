@@ -77,6 +77,7 @@ def main(argv):
             conn.request("DELETE","/api/users/"+user)
             response = conn.getresponse()
             data = response.read()
+            print(data)
 
         # Fetch a list of users
         users = getUsers(conn)
@@ -92,6 +93,7 @@ def main(argv):
             conn.request("DELETE","/api/tasks/"+task)
             response = conn.getresponse()
             data = response.read()
+            print(data)
 
         # Fetch a list of tasks
         tasks = getTasks(conn)

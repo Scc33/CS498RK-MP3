@@ -2,6 +2,7 @@ var secrets = require('../config/secrets');
 const user = require('../models/user');
 const task = require('../models/task');
 const { response } = require('express');
+const { Error } = require('mongoose');
 
 module.exports = function (router) {
     var homeRoute = router.route('/');
@@ -16,6 +17,8 @@ module.exports = function (router) {
 
     var taskRoute = router.route('/tasks');
     taskRoute.get(function (req, res) {
+        console.log(req.query);
+        if (req.query)
         task.find({})
             .then((data) => {
                 res.json({
@@ -53,37 +56,42 @@ module.exports = function (router) {
     });
 
     var individualTaskRoute = router.route('/tasks/:id')
-    individualTaskRoute.get(function (req, res) {
-        var person = task.findById(request.params.id)
-            .then((data) => {
-                res.json({
-                    "message": "Ok",
-                    "data": data
-                })
-            }).catch(err => {
-                res.json({
-                    "message": "error",
-                    "data": ""
-                });
-            });
-    });
-
-    individualTaskRoute.delete(async function (req, res) {
+    individualTaskRoute.get(async function (req, res) {
         try {
-            var result = await task.deleteOne({ _id: request.params.id }).exec();
-            res.json({ 
-                "message": "Ok",
-                "data": result 
-            })
-        } catch (error) {
-            response.status(500).send(error);
-            res.json({
-                "message": "error",
-                "data": ""
+            let result = await task.findById({_id: req.params.id}).exec();
+            if (result === null) {
+                res.status(404).json({
+                    "message": "Error that task cannot be found",
+                    "data": err
+                });
+            } else {
+                res.status(200).json({
+                    "message": "Ok",
+                    "data": result
+                });
+            }
+        } catch (err) {
+            res.status(404).json({
+                "message": "Error that task cannot be found",
+                "data": err
             });
         }
     });
 
+    individualTaskRoute.delete(async function (req, res) {
+        try {
+            var result = await task.deleteOne({ _id: req.params.id }).exec();
+            res.status(200).json({ 
+                "message": "Ok",
+                "data": result 
+            })
+        } catch (err) {
+            res.status(404).json({
+                "message": "Error that task cannot be found",
+                "data": err
+            });
+        }
+    });
 
     /*
      * USERS
@@ -112,7 +120,7 @@ module.exports = function (router) {
 
         try {
             result = await u.save()
-            res.json({ 
+            res.status(201).json({ 
                 "message": "Ok",
                 "data": result 
             })
@@ -127,30 +135,57 @@ module.exports = function (router) {
         console.log(result)
     });
 
-    var testRoute = router.route('/test');
-    testRoute.get(function (req, res) {
-        //res.json({ message: 'test' });
-
-        const Data = {
-            name: 'test',
-            email: 'test@gmail.com',
-            pendingTasks: []
-        }
-        console.log(Data);
-        const testData = new user(Data)
-        console.log(testData)
-        testData.save((error) => {
-            if (error) {
-                console.log("darn");
-                res.status(404);
+    var individualUserRoute = router.route('/users/:id')
+    individualUserRoute.get(async function (req, res) {
+        try {
+            let result = await user.findById({_id: req.params.id}).exec();
+            if (result === null) {
+                res.status(404).json({
+                    "message": "Error that user cannot be found",
+                    "data": err
+                });
             } else {
-                console.log("saved!")
-                res.status(201).json({ 
+                res.status(200).json({
                     "message": "Ok",
-                    "data": "ASDF" 
-                })
+                    "data": result
+                });
             }
-        });
+        } catch (err) {
+            res.status(404).json({
+                "message": "Error that user cannot be found",
+                "data": err
+            });
+        }
+    });
+
+    individualUserRoute.put(async function (req, res) {
+        try {
+            let result = await user.findByIdAndUpdate({_id: req.params.id}, req.body, {new: true}).exec();
+            res.status(200).json({
+                "message": "Ok",
+                "data": result
+            });
+        } catch (err) {
+            res.status(404).json({
+                "message": "Error that user cannot be found",
+                "data": err
+            });
+        }
+    });
+
+    individualUserRoute.delete(async function (req, res) {
+        try {
+            var result = await user.deleteOne({ _id: req.params.id }).exec();
+            res.status(200).json({ 
+                "message": "Ok",
+                "data": result 
+            })
+        } catch (err) {
+            res.status(404).json({
+                "message": "Error that user cannot be found",
+                "data": err
+            });
+        }
     });
 
     return router;
