@@ -1,14 +1,18 @@
 var secrets = require('../config/secrets');
 const user = require('../models/user');
 const task = require('../models/task');
+const { response } = require('express');
 
 module.exports = function (router) {
-
     var homeRoute = router.route('/');
     homeRoute.get(function (req, res) {
         var connectionString = secrets.token;
         res.json({ message: 'My connection string is ' + connectionString });
     });
+
+    /*
+     * TASKS
+     */
 
     var taskRoute = router.route('/tasks');
     taskRoute.get(function (req, res) {
@@ -50,7 +54,7 @@ module.exports = function (router) {
 
     var individualTaskRoute = router.route('/tasks/:id')
     individualTaskRoute.get(function (req, res) {
-        var person = PersonModel.findById(request.params.id)
+        var person = task.findById(request.params.id)
             .then((data) => {
                 res.json({
                     "message": "Ok",
@@ -64,19 +68,40 @@ module.exports = function (router) {
             });
     });
 
+    individualTaskRoute.delete(async function (req, res) {
+        try {
+            var result = await task.deleteOne({ _id: request.params.id }).exec();
+            res.json({ 
+                "message": "Ok",
+                "data": result 
+            })
+        } catch (error) {
+            response.status(500).send(error);
+            res.json({
+                "message": "error",
+                "data": ""
+            });
+        }
+    });
+
+
+    /*
+     * USERS
+     */
+
     var userRoute = router.route('/users');
     userRoute.get(function (req, res) {
         user.find({})
             .then((data) => {
-                res.json({
+                res.status(200).json({
                     "message": "Ok",
                     "data": data
                 })
             })
             .catch(err => {
-                res.json({
-                    "message": "error",
-                    "data": ""
+                res.status(404).json({
+                    "message": "That's an error. The users cannot be found",
+                    "data": err
                 });
             });
     });
@@ -104,7 +129,7 @@ module.exports = function (router) {
 
     var testRoute = router.route('/test');
     testRoute.get(function (req, res) {
-        res.json({ message: 'test' });
+        //res.json({ message: 'test' });
 
         const Data = {
             name: 'test',
@@ -117,8 +142,13 @@ module.exports = function (router) {
         testData.save((error) => {
             if (error) {
                 console.log("darn");
+                res.status(404);
             } else {
                 console.log("saved!")
+                res.status(201).json({ 
+                    "message": "Ok",
+                    "data": "ASDF" 
+                })
             }
         });
     });
