@@ -15,30 +15,51 @@ module.exports = function (router) {
      * TASKS
      */
 
+    /*for (const [key, value] of Object.entries(req.query)) {
+                    console.log(key, value);
+                    console.log(data.exec(key, value));
+                  }*/
     var taskRoute = router.route('/tasks');
     taskRoute.get(async function (req, res) {
         try {
+            var options = JSON.parse(req.query);
+            var tasks = await task.find({}).setOptions(options);
+            console.log(tasks);
+            res.status(200).json(tasks);
+            /*
             var where = {};
             if (req.query.where) {
                 where = JSON.parse(req.query.where);
                 console.log(where);
             }
-            /*for (const [key, value] of Object.entries(req.query)) {
-                    console.log(key, value);
-                    console.log(data.exec(key, value));
-                  }*/
+            
             var result = await task.find(where);
             if (result) {
-                res.status(200).json({
-                    "message": "Ok",
-                    "data": result
-                });
+                console.log(req.query)
+                if ("sort" in req.query) {
+                    console.log("sorting");
+                    var sort = JSON.parse(req.query.sort);
+                    console.log(sort);
+                    result = result.sort(sort).exec();
+                    console.log("sort");
+                }
+                if (result.length > 0) {
+                    res.status(200).json({
+                        "message": "Ok",
+                        "data": result
+                    });
+                } else {
+                    res.status(404).json({ 
+                        "message": "Error no tasks found",
+                        "data": result
+                    });
+                }
             } else {
                 res.status(404).json({ 
                     "message": "Error no tasks found",
                     "data": result
                 });
-            }
+            }*/
         } catch (err) {
             res.status(500).send(err);
         }
