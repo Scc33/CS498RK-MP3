@@ -16,22 +16,32 @@ module.exports = function (router) {
      */
 
     var taskRoute = router.route('/tasks');
-    taskRoute.get(function (req, res) {
-        console.log(req.query);
-        if (req.query)
-        task.find({})
-            .then((data) => {
-                res.json({
+    taskRoute.get(async function (req, res) {
+        try {
+            var where = {};
+            if (req.query.where) {
+                where = JSON.parse(req.query.where);
+                console.log(where);
+            }
+            /*for (const [key, value] of Object.entries(req.query)) {
+                    console.log(key, value);
+                    console.log(data.exec(key, value));
+                  }*/
+            var result = await task.find(where);
+            if (result) {
+                res.status(200).json({
                     "message": "Ok",
-                    "data": data
+                    "data": result
                 });
-            })
-            .catch(err => {
-                res.json({
-                    "message": "error",
-                    "data": ""
+            } else {
+                res.status(404).json({ 
+                    "message": "Error no tasks found",
+                    "data": result
                 });
-            });
+            }
+        } catch (err) {
+            res.status(500).send(err);
+        }
     });
 
     taskRoute.post(async function (req, res) {
