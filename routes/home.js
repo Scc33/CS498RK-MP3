@@ -22,26 +22,57 @@ module.exports = function (router) {
     var taskRoute = router.route('/tasks');
     taskRoute.get(async function (req, res) {
         try {
-            var options = JSON.parse(req.query);
-            var tasks = await task.find({}).setOptions(options);
-            console.log(tasks);
-            res.status(200).json(tasks);
-            /*
             var where = {};
             if (req.query.where) {
                 where = JSON.parse(req.query.where);
                 console.log(where);
             }
-            
-            var result = await task.find(where);
+            var result = await task.find(where)
+                .skip(parseFloat(req.query.skip))
+                .limit(parseFloat(req.query.limit));
+            /*if (req.query.count === "true") {
+                result = await result.count();
+            }*/
             if (result) {
                 console.log(req.query)
                 if ("sort" in req.query) {
                     console.log("sorting");
                     var sort = JSON.parse(req.query.sort);
                     console.log(sort);
-                    result = result.sort(sort).exec();
-                    console.log("sort");
+                    var newResult = await result.sort(sort, function (err, doc) {
+                        if (err) {
+                            console.log(err);
+                        }
+                        console.log(doc);
+                    });
+                }
+                if ("select" in req.query) {
+                    console.log("selecting");
+                    var select = JSON.parse(req.query.select);
+                    console.log(select);
+                    var newResult = await result.select(select, function (err, doc) {
+                        if (err) {
+                            console.log(err);
+                        }
+                    });
+                }
+                if ("skip" in req.query) {
+                    console.log("skipping", parseFloat(req.query.skip));
+                    result = await result.skip(parseFloat(req.query.skip), function (err, doc) {
+                        if (err) {
+                            console.log(err);
+                        }
+                    });
+                }
+                if ("limit" in req.query) {
+                    console.log("limiting");
+                    var limit = JSON.parse(req.query.limit);
+                    console.log(limit);
+                    var newResult = await result.limit(limit, function (err, doc) {
+                        if (err) {
+                            console.log(err);
+                        }
+                    });
                 }
                 if (result.length > 0) {
                     res.status(200).json({
@@ -59,9 +90,12 @@ module.exports = function (router) {
                     "message": "Error no tasks found",
                     "data": result
                 });
-            }*/
+            }
         } catch (err) {
-            res.status(500).send(err);
+            res.status(500).json({
+                "message": "Error, that is something unknown",
+                "data": err
+            });
         }
     });
 
