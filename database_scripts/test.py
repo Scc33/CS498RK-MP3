@@ -205,6 +205,31 @@ def main(argv):
     d = json.loads(data)
     assert(d["message"] == "Error, you need to provide a name and deadline")
 
+    # Multiple users with the same email
+    params = urllib.parse.urlencode({'name': "duplicate", 'email': "test@test.com"}) 
+    conn.request("POST", "/api/users", params, headers)
+    response = conn.getresponse()
+    data = response.read()
+    d = json.loads(data)
+    duplicateUserID = d["data"]["_id"]
+    assert(response.status == 201)
+    params = urllib.parse.urlencode({'name': "duplicate", 'email': "test@test.com"}) 
+    conn.request("POST", "/api/users", params, headers)
+    response = conn.getresponse()
+    assert(response.status == 400)
+    data = response.read()
+    d = json.loads(data)
+    assert(d["message"] == "Error, that email is already in use")
+    params = urllib.parse.urlencode({'name': "duplicate", 'email': "test@test.com"})
+    conn.request("PUT", "/api/users/" + userIDs[0], params, headers)
+    response = conn.getresponse()
+    assert(response.status == 400)
+    data = response.read()
+    d = json.loads(data)
+    assert(d["message"] == "Error, that email is already in use")
+    conn.request("DELETE", "/api/users/" + duplicateUserID, params, headers)
+    response = conn.getresponse()
+    assert(response.status == 200)
 
     # Exit gracefully
     conn.close()

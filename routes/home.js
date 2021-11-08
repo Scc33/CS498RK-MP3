@@ -72,7 +72,7 @@ module.exports = function (router) {
         if (req.body.name && req.body.deadline) {
             var t = new task(req.body);
             let result;
-            
+
             try {
                 result = await t.save();
                 res.status(201).json({
@@ -169,20 +169,28 @@ module.exports = function (router) {
 
     userRoute.post(async function (req, res) {
         if (req.body.name && req.body.email) {
-            var u = new user(req.body);
-            let result;
-
-            try {
-                result = await u.save()
-                res.status(201).json({
-                    "message": "Ok",
-                    "data": result
-                })
-            } catch (err) {
-                res.json({
-                    "message": "Error",
-                    "data": err
+            var searchEmail = await user.find({ "email": req.body.email });
+            if (searchEmail.length !== 0) {
+                res.status(400).json({
+                    "message": "Error, that email is already in use",
+                    "data": searchEmail
                 });
+            } else {
+                var u = new user(req.body);
+                let result;
+
+                try {
+                    result = await u.save()
+                    res.status(201).json({
+                        "message": "Ok",
+                        "data": result
+                    })
+                } catch (err) {
+                    res.json({
+                        "message": "Error",
+                        "data": err
+                    });
+                }
             }
         } else {
             res.status(400).json({
@@ -217,17 +225,26 @@ module.exports = function (router) {
 
     individualUserRoute.put(async function (req, res) {
         if (req.body.name && req.body.email) {
-            try {
-                let result = await user.findByIdAndUpdate({ _id: req.params.id }, req.body, { new: true }).exec();
-                res.status(200).json({
-                    "message": "Ok",
-                    "data": result
+            var searchEmail = await user.find({ "email": req.body.email });
+            console.log(req.body, searchEmail, typeof(JSON.stringify(searchEmail[0]._id)), typeof(req.params.id), JSON.stringify(searchEmail[0]._id), JSON.stringify(req.params.id), JSON.stringify(searchEmail[0]._id) != JSON.stringify(req.params.id));
+            if (searchEmail.length !== 0 && JSON.stringify(searchEmail[0]._id) !== JSON.stringify(req.params.id)) {
+                res.status(400).json({
+                    "message": "Error, that email is already in use",
+                    "data": searchEmail
                 });
-            } catch (err) {
-                res.status(404).json({
-                    "message": "Error that user cannot be found",
-                    "data": err
-                });
+            } else {
+                try {
+                    let result = await user.findByIdAndUpdate({ _id: req.params.id }, req.body, { new: true }).exec();
+                    res.status(200).json({
+                        "message": "Ok",
+                        "data": result
+                    });
+                } catch (err) {
+                    res.status(404).json({
+                        "message": "Error that user cannot be found",
+                        "data": err
+                    });
+                }
             }
         } else {
             res.status(400).json({
