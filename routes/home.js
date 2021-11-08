@@ -11,12 +11,7 @@ module.exports = function (router) {
         res.json({ message: 'My connection string is ' + connectionString });
     });
 
-    /*
-     * TASKS
-     */
-
-    var taskRoute = router.route('/tasks');
-    taskRoute.get(async function (req, res) {
+    async function get(req, res) {
         try {
             var where = {};
             if (req.query.where) {
@@ -30,11 +25,20 @@ module.exports = function (router) {
             if (req.query.sort) {
                 sort = JSON.parse(req.query.sort);
             }
-            var result = await task.find(where)
-                .select(select)
-                .sort(sort)
-                .skip(parseFloat(req.query.skip))
-                .limit(parseFloat(req.query.limit));
+            var result;
+            if (req.route.path === '/users') {
+                result = await user.find(where)
+                    .select(select)
+                    .sort(sort)
+                    .skip(parseFloat(req.query.skip))
+                    .limit(parseFloat(req.query.limit));
+            } else if (req.route.path === '/tasks') {
+                result = await task.find(where)
+                    .select(select)
+                    .sort(sort)
+                    .skip(parseFloat(req.query.skip))
+                    .limit(parseFloat(req.query.limit));
+            }
             if (req.query.count === "true") {
                 result = result.length;
             }
@@ -55,7 +59,14 @@ module.exports = function (router) {
                 "data": err
             });
         }
-    });
+    }
+
+    /*
+     * TASKS
+     */
+
+    var taskRoute = router.route('/tasks');
+    taskRoute.get(get);
 
     taskRoute.post(async function (req, res) {
         var t = new task(req.body);
@@ -126,21 +137,7 @@ module.exports = function (router) {
      */
 
     var userRoute = router.route('/users');
-    userRoute.get(function (req, res) {
-        user.find({})
-            .then((data) => {
-                res.status(200).json({
-                    "message": "Ok",
-                    "data": data
-                })
-            })
-            .catch(err => {
-                res.status(404).json({
-                    "message": "That's an error. The users cannot be found",
-                    "data": err
-                });
-            });
-    });
+    userRoute.get(get);
 
     userRoute.post(async function (req, res) {
         var u = new user(req.body);
