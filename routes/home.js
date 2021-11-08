@@ -15,79 +15,37 @@ module.exports = function (router) {
      * TASKS
      */
 
-    /*for (const [key, value] of Object.entries(req.query)) {
-                    console.log(key, value);
-                    console.log(data.exec(key, value));
-                  }*/
     var taskRoute = router.route('/tasks');
     taskRoute.get(async function (req, res) {
         try {
             var where = {};
             if (req.query.where) {
                 where = JSON.parse(req.query.where);
-                console.log(where);
+            }
+            var select = {};
+            if (req.query.select) {
+                select = JSON.parse(req.query.select);
+            }
+            var sort = {};
+            if (req.query.sort) {
+                sort = JSON.parse(req.query.sort);
             }
             var result = await task.find(where)
+                .select(select)
+                .sort(sort)
                 .skip(parseFloat(req.query.skip))
                 .limit(parseFloat(req.query.limit));
-            /*if (req.query.count === "true") {
-                result = await result.count();
-            }*/
+            if (req.query.count === "true") {
+                result = result.length;
+            }
             if (result) {
-                console.log(req.query)
-                if ("sort" in req.query) {
-                    console.log("sorting");
-                    var sort = JSON.parse(req.query.sort);
-                    console.log(sort);
-                    var newResult = await result.sort(sort, function (err, doc) {
-                        if (err) {
-                            console.log(err);
-                        }
-                        console.log(doc);
-                    });
-                }
-                if ("select" in req.query) {
-                    console.log("selecting");
-                    var select = JSON.parse(req.query.select);
-                    console.log(select);
-                    var newResult = await result.select(select, function (err, doc) {
-                        if (err) {
-                            console.log(err);
-                        }
-                    });
-                }
-                if ("skip" in req.query) {
-                    console.log("skipping", parseFloat(req.query.skip));
-                    result = await result.skip(parseFloat(req.query.skip), function (err, doc) {
-                        if (err) {
-                            console.log(err);
-                        }
-                    });
-                }
-                if ("limit" in req.query) {
-                    console.log("limiting");
-                    var limit = JSON.parse(req.query.limit);
-                    console.log(limit);
-                    var newResult = await result.limit(limit, function (err, doc) {
-                        if (err) {
-                            console.log(err);
-                        }
-                    });
-                }
-                if (result.length > 0) {
-                    res.status(200).json({
-                        "message": "Ok",
-                        "data": result
-                    });
-                } else {
-                    res.status(404).json({ 
-                        "message": "Error no tasks found",
-                        "data": result
-                    });
-                }
+                res.status(200).json({
+                    "message": "Ok",
+                    "data": result
+                });
             } else {
-                res.status(404).json({ 
-                    "message": "Error no tasks found",
+                res.status(404).json({
+                    "message": "Error the returned tasks don't exist",
                     "data": result
                 });
             }
@@ -105,9 +63,9 @@ module.exports = function (router) {
 
         try {
             result = await t.save()
-            res.json({ 
+            res.json({
                 "message": "Ok",
-                "data": result 
+                "data": result
             })
         } catch (err) {
             const errors = err.errors;
@@ -123,7 +81,7 @@ module.exports = function (router) {
     var individualTaskRoute = router.route('/tasks/:id')
     individualTaskRoute.get(async function (req, res) {
         try {
-            let result = await task.findById({_id: req.params.id}).exec();
+            let result = await task.findById({ _id: req.params.id }).exec();
             if (result === null) {
                 res.status(404).json({
                     "message": "Error that task cannot be found",
@@ -146,9 +104,9 @@ module.exports = function (router) {
     individualTaskRoute.delete(async function (req, res) {
         try {
             var result = await task.deleteOne({ _id: req.params.id }).exec();
-            res.status(200).json({ 
+            res.status(200).json({
                 "message": "Ok",
-                "data": result 
+                "data": result
             })
         } catch (err) {
             res.status(404).json({
@@ -185,9 +143,9 @@ module.exports = function (router) {
 
         try {
             result = await u.save()
-            res.status(201).json({ 
+            res.status(201).json({
                 "message": "Ok",
-                "data": result 
+                "data": result
             })
         } catch (err) {
             const errors = err.errors;
@@ -203,7 +161,7 @@ module.exports = function (router) {
     var individualUserRoute = router.route('/users/:id')
     individualUserRoute.get(async function (req, res) {
         try {
-            let result = await user.findById({_id: req.params.id}).exec();
+            let result = await user.findById({ _id: req.params.id }).exec();
             if (result === null) {
                 res.status(404).json({
                     "message": "Error that user cannot be found",
@@ -225,7 +183,7 @@ module.exports = function (router) {
 
     individualUserRoute.put(async function (req, res) {
         try {
-            let result = await user.findByIdAndUpdate({_id: req.params.id}, req.body, {new: true}).exec();
+            let result = await user.findByIdAndUpdate({ _id: req.params.id }, req.body, { new: true }).exec();
             res.status(200).json({
                 "message": "Ok",
                 "data": result
@@ -241,9 +199,9 @@ module.exports = function (router) {
     individualUserRoute.delete(async function (req, res) {
         try {
             var result = await user.deleteOne({ _id: req.params.id }).exec();
-            res.status(200).json({ 
+            res.status(200).json({
                 "message": "Ok",
-                "data": result 
+                "data": result
             })
         } catch (err) {
             res.status(404).json({
