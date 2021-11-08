@@ -90,7 +90,7 @@ def main(argv):
         conn.request("POST", "/api/users", params, headers)
         response = conn.getresponse()
         data = response.read()
-        print(data)
+        #print(data)
         d = json.loads(data)
 
         # Store the users id

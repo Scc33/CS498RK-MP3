@@ -84,7 +84,6 @@ module.exports = function (router) {
                 "data": err
             });
         }
-        console.log(result)
     });
 
     var individualTaskRoute = router.route('/tasks/:id')
@@ -156,7 +155,6 @@ module.exports = function (router) {
                 "data": err
             });
         }
-        console.log(result)
     });
 
     var individualUserRoute = router.route('/users/:id')
