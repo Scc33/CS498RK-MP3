@@ -69,19 +69,26 @@ module.exports = function (router) {
     taskRoute.get(get);
 
     taskRoute.post(async function (req, res) {
-        var t = new task(req.body);
-        let result;
-
-        try {
-            result = await t.save()
-            res.json({
-                "message": "Ok",
-                "data": result
-            })
-        } catch (err) {
-            res.json({
-                "message": "Error",
-                "data": err
+        if (req.body.name && req.body.deadline) {
+            var t = new task(req.body);
+            let result;
+            
+            try {
+                result = await t.save();
+                res.status(201).json({
+                    "message": "Ok",
+                    "data": result
+                });
+            } catch (err) {
+                res.status(500).json({
+                    "message": "Error, that is something unknown",
+                    "data": err
+                });
+            }
+        } else {
+            res.status(400).json({
+                "message": "Error, you need to provide a name and deadline",
+                "data": req.body
             });
         }
     });
@@ -105,6 +112,28 @@ module.exports = function (router) {
             res.status(404).json({
                 "message": "Error that task cannot be found",
                 "data": err
+            });
+        }
+    });
+
+    individualTaskRoute.put(async function (req, res) {
+        if (req.body.name && req.body.deadline) {
+            try {
+                let result = await user.findByIdAndUpdate({ _id: req.params.id }, req.body, { new: true }).exec();
+                res.status(200).json({
+                    "message": "Ok",
+                    "data": result
+                });
+            } catch (err) {
+                res.status(404).json({
+                    "message": "Error that user cannot be found",
+                    "data": err
+                });
+            }
+        } else {
+            res.status(400).json({
+                "message": "Error, you need to provide a name and deadline",
+                "data": ""
             });
         }
     });
@@ -139,20 +168,26 @@ module.exports = function (router) {
     userRoute.get(get);
 
     userRoute.post(async function (req, res) {
-        var u = new user(req.body);
-        let result;
+        if (req.body.name && req.body.email) {
+            var u = new user(req.body);
+            let result;
 
-        try {
-            result = await u.save()
-            res.status(201).json({
-                "message": "Ok",
-                "data": result
-            })
-        } catch (err) {
-            const errors = err.errors;
-            res.json({
-                "message": "Error",
-                "data": err
+            try {
+                result = await u.save()
+                res.status(201).json({
+                    "message": "Ok",
+                    "data": result
+                })
+            } catch (err) {
+                res.json({
+                    "message": "Error",
+                    "data": err
+                });
+            }
+        } else {
+            res.status(400).json({
+                "message": "Error, you need to provide a name and email",
+                "data": ""
             });
         }
     });
@@ -181,16 +216,23 @@ module.exports = function (router) {
     });
 
     individualUserRoute.put(async function (req, res) {
-        try {
-            let result = await user.findByIdAndUpdate({ _id: req.params.id }, req.body, { new: true }).exec();
-            res.status(200).json({
-                "message": "Ok",
-                "data": result
-            });
-        } catch (err) {
-            res.status(404).json({
-                "message": "Error that user cannot be found",
-                "data": err
+        if (req.body.name && req.body.email) {
+            try {
+                let result = await user.findByIdAndUpdate({ _id: req.params.id }, req.body, { new: true }).exec();
+                res.status(200).json({
+                    "message": "Ok",
+                    "data": result
+                });
+            } catch (err) {
+                res.status(404).json({
+                    "message": "Error that user cannot be found",
+                    "data": err
+                });
+            }
+        } else {
+            res.status(400).json({
+                "message": "Error, you need to provide a name and email",
+                "data": ""
             });
         }
     });
