@@ -72,6 +72,7 @@ module.exports = function (router) {
         if (req.body.name && req.body.deadline) {
             var t = new task(req.body);
             let result;
+            // TODO need to update the associated user if exists
 
             try {
                 result = await t.save();
@@ -117,6 +118,7 @@ module.exports = function (router) {
     });
 
     individualTaskRoute.put(async function (req, res) {
+        // TODO need to update the associated user if exists?
         if (req.body.name && req.body.deadline) {
             try {
                 let result = await user.findByIdAndUpdate({ _id: req.params.id }, req.body, { new: true }).exec();
@@ -197,6 +199,7 @@ module.exports = function (router) {
     userRoute.get(get);
 
     userRoute.post(async function (req, res) {
+        // TODO need to update the associated task if exists
         if (req.body.name && req.body.email) {
             var searchEmail = await user.find({ "email": req.body.email });
             if (searchEmail.length !== 0) {
@@ -253,6 +256,7 @@ module.exports = function (router) {
     });
 
     individualUserRoute.put(async function (req, res) {
+        // TODO need to update the associated user if exists?
         if (req.body.name && req.body.email) {
             var searchEmail = await user.find({ "email": req.body.email });
             if (searchEmail.length !== 0 && JSON.stringify(searchEmail[0]._id) !== JSON.stringify(req.params.id)) {

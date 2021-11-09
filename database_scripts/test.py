@@ -245,6 +245,7 @@ def main(argv):
     # print(d)
     # assert(response.status == 404)
 
+    # Delete a user and check accompying tasks
     conn.request("DELETE", "/api/users/" + userIDs[0])
     response = conn.getresponse()
     data = response.read()
@@ -257,6 +258,7 @@ def main(argv):
     assert(d["data"]["assignedUser"] == "")
     assert(d["data"]["assignedUserName"] == "unassigned")
 
+    # Delete a task and check accompying users
     conn.request("DELETE", "/api/tasks/" + taskIDs[1])
     response = conn.getresponse()
     data = response.read()
@@ -267,6 +269,14 @@ def main(argv):
     data = response.read()
     d = json.loads(data)
     assert(len(d["data"]["pendingTasks"]) == 0)
+
+    # Create a user a populate the task
+
+    # Create a task and populate the user
+
+    # Create a task with an unknown user
+
+    # Create a user with an uknown task
 
     # Exit gracefully
     conn.close()
