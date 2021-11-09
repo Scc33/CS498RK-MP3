@@ -140,13 +140,29 @@ module.exports = function (router) {
 
     individualTaskRoute.delete(async function (req, res) {
         try {
-            const doesTaskExist = await task.find({ _id: req.params.id  });
-            if (doesTaskExist.length == 0) {
-                res.status(404).json({
-                    "message": "Error that task cannot be found",
-                    "data": err
-                });
-            } else {
+            const t = await task.findOne({ _id: req.params.id });
+            if (t) {
+                var userToUpdate = t.assignedUser;
+                var u = null;
+                if (userToUpdate) {
+                    u = await user.findOne({ _id: userToUpdate });
+                }
+                if (u) {
+                    var arr = u.pendingTasks;
+                    var index = arr.indexOf(req.params.id);
+                    if (index > -1) {
+                        arr.splice(index, 1);
+                    }
+                    u.pendingTasks = arr;
+                    var updateTask = await u.save();
+                    if (updateTask === null) {
+                        res.status(500).json({
+                            "message": "Error something strange happened behind the scenes",
+                            "data": err
+                        });
+                    }
+                }
+
                 var result = await task.deleteOne({ _id: req.params.id });
                 if (result.deletedCount === 0) {
                     res.status(404).json({
@@ -159,6 +175,11 @@ module.exports = function (router) {
                         "data": result
                     });
                 }
+            } else {
+                res.status(404).json({
+                    "message": "Error that task cannot be found",
+                    "data": err
+                }).send();
             }
         } catch (err) {
             res.status(500).json({
@@ -264,21 +285,21 @@ module.exports = function (router) {
     individualUserRoute.delete(async function (req, res) {
         try {
             var u = await user.find({ _id: req.params.id });
-            console.log(u[0].pendingTasks);
             var tasks = u[0].pendingTasks;
             for (var i = 0; i < tasks.length; i++) {
-                var t = await task.find({ _id: tasks[i] });
-                t[0].assignedUser = "";
-                t[0].assignedUserName = "unassigned"
-                var updateTask = await t[0].save();
-                if (updateTask === null) {
-                    res.status(500).json({
-                        "message": "Error something strange happened behind the scenes",
-                        "data": err
-                    });
+                var t = await task.findOne({ _id: tasks[i] });
+                if (t) {
+                    t.assignedUser = "";
+                    t.assignedUserName = "unassigned"
+                    var updateTask = await t.save();
+                    if (updateTask === null) {
+                        res.status(500).json({
+                            "message": "Error something strange happened behind the scenes",
+                            "data": err
+                        });
+                    }
                 }
             }
-
             var result = await user.deleteOne({ _id: req.params.id }).exec();
             if (result.deletedCount === 0) {
                 res.status(404).json({

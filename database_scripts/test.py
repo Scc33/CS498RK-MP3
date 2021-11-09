@@ -236,8 +236,13 @@ def main(argv):
     data = response.read()
 
     # Delete an invalid task
-    # conn.request("DELETE", "/api/tasks/14253fasdf")
+    # bad = str("41224d776a326fb40f000001")
+    # conn.request("DELETE", "/api/tasks/" + bad)
     # response = conn.getresponse()
+    # data = response.read()
+    # d = json.loads(data)
+    # print(response.status)
+    # print(d)
     # assert(response.status == 404)
 
     conn.request("DELETE", "/api/users/" + userIDs[0])
