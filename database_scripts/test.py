@@ -60,6 +60,7 @@ def main(argv):
         # POST the user
         conn.request("POST", "/api/users", params, headers)
         response = conn.getresponse()
+        assert(response.status == 201)
         data = response.read()
         d = json.loads(data)
 
@@ -71,6 +72,7 @@ def main(argv):
     taskDescription = ["1","2","3","4","5"]
     taskDeadline = [(mktime(date.today().timetuple())) * 1000 for i in range(taskCount)]
     taskCompleted = [True, False, False, False, False]
+    taskIDs = []
 
     # Loop 'taskCount' number of times
     for i in range(taskCount):
@@ -82,6 +84,7 @@ def main(argv):
         assert(response.status == 201)
         data = response.read()
         d = json.loads(data)
+        taskIDs.append(str(d['data']['_id']))
 
         taskID = str(d['data']['_id'])
 
@@ -230,6 +233,35 @@ def main(argv):
     conn.request("DELETE", "/api/users/" + duplicateUserID, params, headers)
     response = conn.getresponse()
     assert(response.status == 200)
+    data = response.read()
+
+    # Delete an invalid task
+    # conn.request("DELETE", "/api/tasks/14253fasdf")
+    # response = conn.getresponse()
+    # assert(response.status == 404)
+
+    conn.request("DELETE", "/api/users/" + userIDs[0])
+    response = conn.getresponse()
+    data = response.read()
+    assert(response.status == 200)
+    conn.request("GET", "/api/tasks/" + taskIDs[0])
+    response = conn.getresponse()
+    assert(response.status == 200)
+    data = response.read()
+    d = json.loads(data)
+    assert(d["data"]["assignedUser"] == "")
+    assert(d["data"]["assignedUserName"] == "unassigned")
+
+    conn.request("DELETE", "/api/tasks/" + taskIDs[1])
+    response = conn.getresponse()
+    data = response.read()
+    assert(response.status == 200)
+    conn.request("GET", "/api/users/" + userIDs[1])
+    response = conn.getresponse()
+    assert(response.status == 200)
+    data = response.read()
+    d = json.loads(data)
+    assert(len(d["data"]["pendingTasks"]) == 0)
 
     # Exit gracefully
     conn.close()

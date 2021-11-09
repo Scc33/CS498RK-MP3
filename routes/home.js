@@ -140,17 +140,25 @@ module.exports = function (router) {
 
     individualTaskRoute.delete(async function (req, res) {
         try {
-            var result = await task.deleteOne({ _id: req.params.id }).exec();
-            if (result.deletedCount === 0) {
+            const doesTaskExist = await task.find({ _id: req.params.id  });
+            if (doesTaskExist.length == 0) {
                 res.status(404).json({
                     "message": "Error that task cannot be found",
                     "data": err
                 });
             } else {
-                res.status(200).json({
-                    "message": "Ok",
-                    "data": result
-                });
+                var result = await task.deleteOne({ _id: req.params.id });
+                if (result.deletedCount === 0) {
+                    res.status(404).json({
+                        "message": "Error that task cannot be found",
+                        "data": err
+                    });
+                } else {
+                    res.status(200).json({
+                        "message": "Ok",
+                        "data": result
+                    });
+                }
             }
         } catch (err) {
             res.status(500).json({
@@ -226,7 +234,6 @@ module.exports = function (router) {
     individualUserRoute.put(async function (req, res) {
         if (req.body.name && req.body.email) {
             var searchEmail = await user.find({ "email": req.body.email });
-            console.log(req.body, searchEmail, typeof(JSON.stringify(searchEmail[0]._id)), typeof(req.params.id), JSON.stringify(searchEmail[0]._id), JSON.stringify(req.params.id), JSON.stringify(searchEmail[0]._id) != JSON.stringify(req.params.id));
             if (searchEmail.length !== 0 && JSON.stringify(searchEmail[0]._id) !== JSON.stringify(req.params.id)) {
                 res.status(400).json({
                     "message": "Error, that email is already in use",
@@ -256,6 +263,22 @@ module.exports = function (router) {
 
     individualUserRoute.delete(async function (req, res) {
         try {
+            var u = await user.find({ _id: req.params.id });
+            console.log(u[0].pendingTasks);
+            var tasks = u[0].pendingTasks;
+            for (var i = 0; i < tasks.length; i++) {
+                var t = await task.find({ _id: tasks[i] });
+                t[0].assignedUser = "";
+                t[0].assignedUserName = "unassigned"
+                var updateTask = await t[0].save();
+                if (updateTask === null) {
+                    res.status(500).json({
+                        "message": "Error something strange happened behind the scenes",
+                        "data": err
+                    });
+                }
+            }
+
             var result = await user.deleteOne({ _id: req.params.id }).exec();
             if (result.deletedCount === 0) {
                 res.status(404).json({
