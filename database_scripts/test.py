@@ -354,6 +354,8 @@ def main(argv):
     response = conn.getresponse()
     data = response.read()
     d = json.loads(data)
+    assert(d["data"]["name"] == "user3updated")
+    assert(d["data"]["_id"] == userID)
     assert(response.status == 200)
     conn.request("GET", "/api/tasks/" + taskID)
     response = conn.getresponse()
@@ -362,6 +364,7 @@ def main(argv):
     print(d)
     assert(response.status == 200)
     assert(d["data"]["assignedUserName"] == "user3updated")
+    assert(d["data"]["assignedUser"] == userID)
 
     # Create a task with an unknown user
     params = urllib.parse.urlencode({'name': "task4", 'deadline': taskDeadline[i], 'assignedUser': "41224d776a326fb40f000001"})
@@ -370,7 +373,7 @@ def main(argv):
     data = response.read()
     d = json.loads(data)
     assert(response.status == 400)
-    params = urllib.parse.urlencode({'name': "task4", 'deadline': taskDeadline[i], 'assignedUser': userID, 'assignedUserName': "user3"})
+    params = urllib.parse.urlencode({'name': "task4", 'deadline': taskDeadline[i], 'assignedUser': userID, 'assignedUserName': "user3updated"})
     conn.request("POST", "/api/tasks", params, headers)
     response = conn.getresponse()
     data = response.read()
@@ -393,6 +396,34 @@ def main(argv):
     assert(len(d["data"]["pendingTasks"]) == 0)
 
     # Remove task if completed
+    params = urllib.parse.urlencode({'name': "task5", 'deadline': taskDeadline[i], 'assignedUser': userID, 'assignedUserName': "user3updated"})
+    conn.request("POST", "/api/tasks", params, headers)
+    response = conn.getresponse()
+    data = response.read()
+    d = json.loads(data)
+    taskID = d["data"]["_id"]
+    assert(response.status == 201)
+    conn.request("GET", "/api/users?where={"'"name"'":"'"user3updated"'"}")
+    response = conn.getresponse()
+    data = response.read()
+    d = json.loads(data)
+    print(response.status, d)
+    assert(response.status == 200)
+    assert(len(d["data"]) == 1)
+    pendingTaskLen = len(d["data"][0]["pendingTasks"])
+    params = urllib.parse.urlencode({'name': "task5", 'deadline': taskDeadline[i], 'assignedUser': userID, 'assignedUserName': "user3updated", 'completed': "true"})
+    conn.request("PUT", "/api/tasks/" + taskID, params, headers)
+    response = conn.getresponse()
+    data = response.read()
+    d = json.loads(data)
+    assert(response.status == 200)
+    conn.request("GET", "/api/users?where={"'"name"'":"'"user3updated"'"}")
+    response = conn.getresponse()
+    data = response.read()
+    d = json.loads(data)
+    assert(response.status == 200)
+    assert(len(d["data"][0]["pendingTasks"]) == pendingTaskLen - 1)
+
 
     # Create user with completed tasks
 

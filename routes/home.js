@@ -146,13 +146,22 @@ module.exports = function (router) {
             try {
                 var u = await user.findOne({ _id: req.body.assignedUser });
                 if (u && u.name == req.body.assignedUserName) {
-                    var result = await task.findByIdAndUpdate({ _id: req.params.id }, req.body, { new: true });
+                    var result = await task.findByIdAndUpdate({ _id: req.params.id }, req.body, { new: true }).exec();
                     if (result) {
                         if (u.pendingTasks.indexOf(result._id) === -1) {
                             console.log("put", u.pendingTasks, result._id);
                             u.pendingTasks.push(result._id);
                             console.log("put", u.pendingTasks, result._id);
-                            var savedUser = await u.save();
+                            var savedUser = await user.findByIdAndUpdate({ _id: req.body.assignedUser }, u, { new: true }).exec();
+                        }
+                        if (req.body.completed) {
+                            var arr = u.pendingTasks;
+                            var index = arr.indexOf(req.params.id);
+                            if (index > -1) {
+                                arr.splice(index, 1);
+                            }
+                            u.pendingTasks = arr;
+                            var savedUser = await user.findByIdAndUpdate({ _id: req.body.assignedUser }, u, { new: true }).exec();
                         }
                         res.status(200).json({
                             "message": "Ok",
@@ -244,7 +253,7 @@ module.exports = function (router) {
     userRoute.get(get);
 
     userRoute.post(async function (req, res) {
-        console.log("userpost",req.body, req.params);
+        console.log("userpost", req.body, req.params);
         if (req.body.name && req.body.email) {
             var searchEmail = await user.find({ "email": req.body.email });
             if (searchEmail.length !== 0) {
@@ -253,7 +262,7 @@ module.exports = function (router) {
                     "data": searchEmail
                 });
             } else {
-                console.log("userPost", typeof(req.body.pendingTasks), req.body.pendingTasks)
+                console.log("userPost", typeof (req.body.pendingTasks), req.body.pendingTasks)
                 var u = new user(req.body);
                 let result;
 
@@ -319,13 +328,13 @@ module.exports = function (router) {
                             "message": "Ok",
                             "data": result
                         })
-                    } catch(err) {
+                    } catch (err) {
                         console.log(err)
                         res.status(500).json({
                             "message": "Error, something bad happened",
                             "data": err
                         });
-                    }         
+                    }
                 }
             }
         } else {
