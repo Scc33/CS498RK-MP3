@@ -149,9 +149,9 @@ module.exports = function (router) {
                     var result = await task.findByIdAndUpdate({ _id: req.params.id }, req.body, { new: true });
                     if (result) {
                         if (u.pendingTasks.indexOf(result._id) === -1) {
-                            console.log("put", u.pendingTasks, _id);
+                            console.log("put", u.pendingTasks, result._id);
                             u.pendingTasks.push(result._id);
-                            console.log("put", u.pendingTasks, _id);
+                            console.log("put", u.pendingTasks, result._id);
                             var savedUser = await u.save();
                         }
                         res.status(200).json({
@@ -171,6 +171,7 @@ module.exports = function (router) {
                     });
                 }
             } catch (err) {
+                console.log("put", err)
                 res.status(500).json({
                     "message": "Error, that is something unknown",
                     "data": err
@@ -253,7 +254,20 @@ module.exports = function (router) {
                 });
             } else {
                 console.log("userPost", typeof(req.body.pendingTasks), req.body.pendingTasks)
-                if (req.body.pendingTasks) {
+                var u = new user(req.body);
+                let result;
+
+                try {
+                    result = await u.save()
+                } catch (err) {
+                    console.log(err)
+                    res.status(500).json({
+                        "message": "Error, something bad happened",
+                        "data": err
+                    });
+                }
+
+                if (u.pendingTasks) {
                     if (Array.isArray(req.body.pendingTasks)) {
                         for (var i = 0; i < req.body.pendingTasks.length; i++) {
                             var t = await task.findOne({ _id: req.body.pendingTasks[i] });
@@ -268,7 +282,7 @@ module.exports = function (router) {
                                 } else {
                                     t.assignedUser = req.body._id;
                                     t.assignedUserName = req.body.name;
-                                    var updatedTask = await t.save();
+                                    var updatedTask = await task.findByIdAndUpdate({ _id: t._id }, t, { new: true });
                                 }
                             } else {
                                 var arr = req.body.pendingTasks;
@@ -280,36 +294,38 @@ module.exports = function (router) {
                             }
                         }
                     } else {
+                        console.log("userPostPending", req.body.pendingTasks)
                         var t = await task.findOne({ _id: req.body.pendingTasks });
+                        console.log(t);
                         if (t) {
                             if (t.completed) {
                                 req.body.pendingTasks = [];
                             } else {
+                                console.log("not completed", t, t.completed)
                                 t.assignedUser = req.body._id;
                                 t.assignedUserName = req.body.name;
-                                var updatedTask = await t.save();
+                                console.log("not completed", t, t.completed)
+                                var updatedTask = await task.findByIdAndUpdate({ _id: t._id }, t, { new: true });
+                                console.log(updatedTask);
                             }
                         } else {
                             req.body.pendingTasks = [];
                         }
                     }
-                }
 
-                var u = new user(req.body);
-                let result;
-
-                try {
-                    result = await u.save()
-                    res.status(201).json({
-                        "message": "Ok",
-                        "data": result
-                    })
-                } catch (err) {
-                    console.log(err)
-                    res.json({
-                        "message": "Error",
-                        "data": err
-                    });
+                    try {
+                        result = await user.findByIdAndUpdate({ _id: u._id }, req.body, { new: true });
+                        res.status(201).json({
+                            "message": "Ok",
+                            "data": result
+                        })
+                    } catch(err) {
+                        console.log(err)
+                        res.status(500).json({
+                            "message": "Error, something bad happened",
+                            "data": err
+                        });
+                    }         
                 }
             }
         } else {

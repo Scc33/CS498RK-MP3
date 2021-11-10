@@ -60,9 +60,10 @@ def main(argv):
         # POST the user
         conn.request("POST", "/api/users", params, headers)
         response = conn.getresponse()
-        assert(response.status == 201)
         data = response.read()
         d = json.loads(data)
+        print(d)
+        assert(response.status == 201)
 
         # Store the users id
         userIDs.append(str(d['data']['_id']))
@@ -322,6 +323,7 @@ def main(argv):
     data = response.read()
     d = json.loads(data)
     print(d)
+    print(d["data"]["assignedUser"], userID)
     assert(d["data"]["assignedUser"] == userID)
 
     # Create a user a populate the task, Create a task and populate the user (put)
