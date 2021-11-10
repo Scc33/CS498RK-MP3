@@ -80,9 +80,9 @@ module.exports = function (router) {
                     if (u) {
                         result = await t.save();
                         if (u.pendingTasks.indexOf(result._id) === -1) {
-                            console.log("post", u.pendingTasks);
+                            console.log("post", u.pendingTasks, result._id);
                             u.pendingTasks.push(result._id);
-                            console.log("post", u.pendingTasks);
+                            console.log("post", u.pendingTasks, result._id);
                             var savedUser = await u.save();
                         }
                         res.status(201).json({
@@ -149,9 +149,9 @@ module.exports = function (router) {
                     var result = await task.findByIdAndUpdate({ _id: req.params.id }, req.body, { new: true });
                     if (result) {
                         if (u.pendingTasks.indexOf(result._id) === -1) {
-                            console.log("put", u.pendingTasks);
+                            console.log("put", u.pendingTasks, _id);
                             u.pendingTasks.push(result._id);
-                            console.log("put", u.pendingTasks);
+                            console.log("put", u.pendingTasks, _id);
                             var savedUser = await u.save();
                         }
                         res.status(200).json({
@@ -243,6 +243,7 @@ module.exports = function (router) {
     userRoute.get(get);
 
     userRoute.post(async function (req, res) {
+        console.log("userpost",req.body, req.params);
         if (req.body.name && req.body.email) {
             var searchEmail = await user.find({ "email": req.body.email });
             if (searchEmail.length !== 0) {
@@ -251,6 +252,49 @@ module.exports = function (router) {
                     "data": searchEmail
                 });
             } else {
+                console.log("userPost", typeof(req.body.pendingTasks), req.body.pendingTasks)
+                if (req.body.pendingTasks) {
+                    if (Array.isArray(req.body.pendingTasks)) {
+                        for (var i = 0; i < req.body.pendingTasks.length; i++) {
+                            var t = await task.findOne({ _id: req.body.pendingTasks[i] });
+                            if (t) {
+                                if (t.completed) {
+                                    var arr = req.body.pendingTasks;
+                                    var index = arr.indexOf(req.body.pendingTasks[i]);
+                                    if (index > -1) {
+                                        arr.splice(index, 1);
+                                    }
+                                    req.body.pendingTasks = arr;
+                                } else {
+                                    t.assignedUser = req.body._id;
+                                    t.assignedUserName = req.body.name;
+                                    var updatedTask = await t.save();
+                                }
+                            } else {
+                                var arr = req.body.pendingTasks;
+                                var index = arr.indexOf(req.body.pendingTasks[i]);
+                                if (index > -1) {
+                                    arr.splice(index, 1);
+                                }
+                                req.body.pendingTasks = arr;
+                            }
+                        }
+                    } else {
+                        var t = await task.findOne({ _id: req.body.pendingTasks });
+                        if (t) {
+                            if (t.completed) {
+                                req.body.pendingTasks = [];
+                            } else {
+                                t.assignedUser = req.body._id;
+                                t.assignedUserName = req.body.name;
+                                var updatedTask = await t.save();
+                            }
+                        } else {
+                            req.body.pendingTasks = [];
+                        }
+                    }
+                }
+
                 var u = new user(req.body);
                 let result;
 
@@ -261,6 +305,7 @@ module.exports = function (router) {
                         "data": result
                     })
                 } catch (err) {
+                    console.log(err)
                     res.json({
                         "message": "Error",
                         "data": err
@@ -299,6 +344,7 @@ module.exports = function (router) {
     });
 
     individualUserRoute.put(async function (req, res) {
+        console.log("userput", req.body, req.params);
         if (req.body.name && req.body.email) {
             var searchEmail = await user.find({ "email": req.body.email });
             if (searchEmail.length !== 0 && JSON.stringify(searchEmail[0]._id) !== JSON.stringify(req.params.id)) {
@@ -308,21 +354,42 @@ module.exports = function (router) {
                 });
             } else {
                 try {
-                    let result = await user.findByIdAndUpdate({ _id: req.params.id }, req.body, { new: true }).exec();
                     var t = await task.find({ assignedUser: req.params.id });
-                    if (t) {
+                    if (t && req.params.pendingTasks) {
                         for (let i = 0; i < t.length; i++) {
+                            if (t[i].completed) {
+                                var arr = req.params.pendingTasks;
+                                var index = arr.indexOf(req.params.pendingTasks[i]);
+                                if (index > -1) {
+                                    arr.splice(index, 1);
+                                }
+                                req.params.pendingTasks = arr;
+                            } else {
+                                t.assignedUser = req.params._id;
+                                t.assignedUserName = req.params.name;
+                                var updatedTask = await t[i].save();
+                            }
                             t[i].assignedUserName = req.body.name;
                             var updatedTask = await t[i].save();
                         }
                     }
-                    res.status(200).json({
-                        "message": "Ok",
-                        "data": result
-                    });
+
+                    let result = await user.findByIdAndUpdate({ _id: req.params.id }, req.body, { new: true }).exec();
+                    if (result) {
+                        res.status(200).json({
+                            "message": "Ok",
+                            "data": result
+                        });
+                    } else {
+                        res.status(404).json({
+                            "message": "Error that user cannot be found",
+                            "data": err
+                        });
+                    }
                 } catch (err) {
-                    res.status(404).json({
-                        "message": "Error that user cannot be found",
+                    console.log(err)
+                    res.status(500).json({
+                        "message": "Error something strange happened behind the scenes",
                         "data": err
                     });
                 }

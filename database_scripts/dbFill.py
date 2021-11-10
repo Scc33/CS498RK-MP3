@@ -140,8 +140,10 @@ def main(argv):
 
             # Append the new taskID to pending tasks
             assignedUserTasks = d['data'][0]['pendingTasks']
+            print("assignedUserTasks", assignedUserTasks)
             assignedUserTasks = [str(x).replace('[','').replace(']','').replace("'",'').replace('"','') for x in assignedUserTasks]
-            assignedUserTasks.append(taskID)
+            print("assignedUserTasks", assignedUserTasks)
+            # assignedUserTasks.append(taskID)
 
             # PUT in the user
             params = urllib.parse.urlencode({'_id': assignedUserID, 'name': assignedUserName, 'email': assignedUserEmail, 'dateCreated': assignedUserDate, 'pendingTasks': assignedUserTasks}, True)

@@ -112,6 +112,7 @@ def main(argv):
         params = urllib.parse.urlencode({'_id': userIDs[i], 'name': assignedUserName, 'email': assignedUserEmail, 'dateCreated': assignedUserDate, 'pendingTasks': assignedUserTasks}, True)
         conn.request("PUT", "/api/users/"+userIDs[i], params, headers)
         response = conn.getresponse()
+        print(response.status)
         assert(response.status == 200)
         assert(response.reason == "OK")
         data = response.read()
@@ -308,7 +309,8 @@ def main(argv):
     d = json.loads(data)
     taskID = d["data"]["_id"]
     assert(response.status == 201)
-    params = urllib.parse.urlencode({'name': "user2", 'email': "user2t@gmail", "pendingTasks": taskID})
+    pendingTasks = taskID
+    params = urllib.parse.urlencode({'name': "user2", 'email': "user2t@gmail", "pendingTasks": pendingTasks})
     conn.request("POST", "/api/users", params, headers)
     response = conn.getresponse()
     data = response.read()
@@ -319,6 +321,7 @@ def main(argv):
     response = conn.getresponse()
     data = response.read()
     d = json.loads(data)
+    print(d)
     assert(d["data"]["assignedUser"] == userID)
 
     # Create a user a populate the task, Create a task and populate the user (put)
@@ -356,8 +359,33 @@ def main(argv):
     assert(d["data"]["assignedUserName"] == "user3updated")
 
     # Create a task with an unknown user
+    params = urllib.parse.urlencode({'name': "task4", 'deadline': taskDeadline[i], 'assignedUser': "41224d776a326fb40f000001"})
+    conn.request("POST", "/api/tasks", params, headers)
+    response = conn.getresponse()
+    data = response.read()
+    d = json.loads(data)
+    assert(response.status == 400)
+    params = urllib.parse.urlencode({'name': "task4", 'deadline': taskDeadline[i], 'assignedUser': userID, 'assignedUserName': "user3"})
+    conn.request("POST", "/api/tasks", params, headers)
+    response = conn.getresponse()
+    data = response.read()
+    d = json.loads(data)
+    assert(response.status == 201)
+    params = urllib.parse.urlencode({'name': "task4", 'deadline': taskDeadline[i], 'assignedUser': "41224d776a326fb40f000001"})
+    conn.request("PUT", "/api/tasks/" + taskID, params, headers)
+    response = conn.getresponse()
+    data = response.read()
+    d = json.loads(data)
+    assert(response.status == 400)
 
     # Create a user with an uknown task
+    params = urllib.parse.urlencode({'name': "user4", 'email': "user4@gmail", "pendingTasks": "41224d776a326fb40f000001"})
+    conn.request("POST", "/api/users", params, headers)
+    response = conn.getresponse()
+    data = response.read()
+    d = json.loads(data)
+    assert(response.status == 201)
+    assert(len(d["data"]["pendingTasks"]) == 0)
 
     # Remove task if completed
 
