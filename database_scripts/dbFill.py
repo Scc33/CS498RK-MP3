@@ -92,6 +92,7 @@ def main(argv):
         data = response.read()
         #print(data)
         d = json.loads(data)
+        print(d)
 
         # Store the users id
         userIDs.append(str(d['data']['_id']))

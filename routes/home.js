@@ -72,20 +72,17 @@ module.exports = function (router) {
         if (req.body.name && req.body.deadline) {
             var t = new task(req.body);
             let result;
-            // TODO check if username and id match
-            // TODO need to update the associated user if exists
-
             try {
                 //console.log(req.body, req.body.assignedUser);
                 if (req.body.assignedUser) {
                     var u = await user.findOne({ _id: req.body.assignedUser });
                     //console.log(u, req.body.assignedUser);
-                    if (u && u.name == req.body.assignedUserName) {
+                    if (u) {
                         result = await t.save();
                         if (u.pendingTasks.indexOf(result._id) === -1) {
-                            console.log(u.pendingTasks);
+                            console.log("post", u.pendingTasks);
                             u.pendingTasks.push(result._id);
-                            console.log(u.pendingTasks);
+                            console.log("post", u.pendingTasks);
                             var savedUser = await u.save();
                         }
                         res.status(201).json({
@@ -145,18 +142,37 @@ module.exports = function (router) {
     });
 
     individualTaskRoute.put(async function (req, res) {
-        // TODO check if username and iid match
-        // TODO need to update the associated user if exists?
         if (req.body.name && req.body.deadline) {
             try {
-                let result = await user.findByIdAndUpdate({ _id: req.params.id }, req.body, { new: true }).exec();
-                res.status(200).json({
-                    "message": "Ok",
-                    "data": result
-                });
+                var u = await user.findOne({ _id: req.body.assignedUser });
+                if (u && u.name == req.body.assignedUserName) {
+                    var result = await task.findByIdAndUpdate({ _id: req.params.id }, req.body, { new: true });
+                    if (result) {
+                        if (u.pendingTasks.indexOf(result._id) === -1) {
+                            console.log("put", u.pendingTasks);
+                            u.pendingTasks.push(result._id);
+                            console.log("put", u.pendingTasks);
+                            var savedUser = await u.save();
+                        }
+                        res.status(200).json({
+                            "message": "Ok",
+                            "data": result
+                        });
+                    } else {
+                        res.status(404).json({
+                            "message": "Error that task cannot be found",
+                            "data": err
+                        });
+                    }
+                } else {
+                    res.status(400).json({
+                        "message": "Error, that user doesn't exist",
+                        "data": req.body
+                    });
+                }
             } catch (err) {
-                res.status(404).json({
-                    "message": "Error that user cannot be found",
+                res.status(500).json({
+                    "message": "Error, that is something unknown",
                     "data": err
                 });
             }
@@ -227,7 +243,6 @@ module.exports = function (router) {
     userRoute.get(get);
 
     userRoute.post(async function (req, res) {
-        // TODO need to update the associated task if exists
         if (req.body.name && req.body.email) {
             var searchEmail = await user.find({ "email": req.body.email });
             if (searchEmail.length !== 0) {
@@ -284,7 +299,6 @@ module.exports = function (router) {
     });
 
     individualUserRoute.put(async function (req, res) {
-        // TODO need to update the associated user if exists?
         if (req.body.name && req.body.email) {
             var searchEmail = await user.find({ "email": req.body.email });
             if (searchEmail.length !== 0 && JSON.stringify(searchEmail[0]._id) !== JSON.stringify(req.params.id)) {
@@ -295,6 +309,13 @@ module.exports = function (router) {
             } else {
                 try {
                     let result = await user.findByIdAndUpdate({ _id: req.params.id }, req.body, { new: true }).exec();
+                    var t = await task.find({ assignedUser: req.params.id });
+                    if (t) {
+                        for (let i = 0; i < t.length; i++) {
+                            t[i].assignedUserName = req.body.name;
+                            var updatedTask = await t[i].save();
+                        }
+                    }
                     res.status(200).json({
                         "message": "Ok",
                         "data": result
