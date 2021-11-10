@@ -72,7 +72,7 @@ def main(argv):
     taskName = ["1","2","3","4","5"]
     taskDescription = ["1","2","3","4","5"]
     taskDeadline = [(mktime(date.today().timetuple())) * 1000 for i in range(taskCount)]
-    taskCompleted = [True, False, False, False, False]
+    taskCompleted = [False, False, False, False, False]
     taskIDs = []
 
     # Loop 'taskCount' number of times
@@ -257,6 +257,7 @@ def main(argv):
     # assert(response.status == 404)
 
     # Delete a user and check accompying tasks
+    # breakpoint()
     conn.request("DELETE", "/api/users/" + userIDs[0])
     response = conn.getresponse()
     data = response.read()
@@ -266,6 +267,7 @@ def main(argv):
     assert(response.status == 200)
     data = response.read()
     d = json.loads(data)
+    print(d)
     assert(d["data"]["assignedUser"] == "")
     assert(d["data"]["assignedUserName"] == "unassigned")
 
@@ -358,6 +360,7 @@ def main(argv):
     data = response.read()
     d = json.loads(data)
     print(d)
+    assert(response.status == 200)
     assert(d["data"]["assignedUserName"] == "user3updated")
 
     # Create a task with an unknown user
