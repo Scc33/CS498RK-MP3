@@ -72,21 +72,48 @@ module.exports = function (router) {
         if (req.body.name && req.body.deadline) {
             var t = new task(req.body);
             let result;
+            // TODO check if username and id match
             // TODO need to update the associated user if exists
 
             try {
-                result = await t.save();
-                res.status(201).json({
-                    "message": "Ok",
-                    "data": result
-                });
+                //console.log(req.body, req.body.assignedUser);
+                if (req.body.assignedUser) {
+                    var u = await user.findOne({ _id: req.body.assignedUser });
+                    //console.log(u, req.body.assignedUser);
+                    if (u && u.name == req.body.assignedUserName) {
+                        result = await t.save();
+                        if (u.pendingTasks.indexOf(result._id) === -1) {
+                            console.log(u.pendingTasks);
+                            u.pendingTasks.push(result._id);
+                            console.log(u.pendingTasks);
+                            var savedUser = await u.save();
+                        }
+                        res.status(201).json({
+                            "message": "Ok",
+                            "data": result
+                        });
+                    } else {
+                        res.status(400).json({
+                            "message": "Error, that user doesn't exist or the name and id don't match",
+                            "data": req.body
+                        });
+                    }
+                } else {
+                    result = await t.save();
+                    res.status(201).json({
+                        "message": "Ok",
+                        "data": result
+                    });
+                }
             } catch (err) {
+                console.log(err)
                 res.status(500).json({
                     "message": "Error, that is something unknown",
                     "data": err
                 });
             }
         } else {
+            console.log(req.body);
             res.status(400).json({
                 "message": "Error, you need to provide a name and deadline",
                 "data": req.body
@@ -118,6 +145,7 @@ module.exports = function (router) {
     });
 
     individualTaskRoute.put(async function (req, res) {
+        // TODO check if username and iid match
         // TODO need to update the associated user if exists?
         if (req.body.name && req.body.deadline) {
             try {
