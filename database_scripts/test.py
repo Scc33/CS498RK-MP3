@@ -424,8 +424,22 @@ def main(argv):
     assert(response.status == 200)
     assert(len(d["data"][0]["pendingTasks"]) == pendingTaskLen - 1)
 
-
     # Create user with completed tasks
+    params = urllib.parse.urlencode({'name': "task6", 'deadline': taskDeadline[i], 'assignedUser': "", 'assignedUserName': "", 'completed': "true"})
+    conn.request("POST", "/api/tasks", params, headers)
+    response = conn.getresponse()
+    data = response.read()
+    d = json.loads(data)
+    taskID = d["data"]["_id"]
+    assert(response.status == 201)
+    params = urllib.parse.urlencode({'name': "user5", 'email': "user5@gmail", "pendingTasks": taskID})
+    conn.request("POST", "/api/users", params, headers)
+    response = conn.getresponse()
+    data = response.read()
+    d = json.loads(data)
+    print(d)
+    assert(response.status == 201)
+    assert(len(d["data"]["pendingTasks"]) == 0)
 
     # Exit gracefully
     conn.close()
