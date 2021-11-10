@@ -15,11 +15,11 @@ Here is the Task Schema:
 // Define our user schema
 var TaskSchema = new mongoose.Schema({
     name: String,
-    description: String,
+    description: {type: String, default : ""},
     deadline: Date,
-    completed: Boolean,
-    assignedUser: String,
-    assignedUserName: String,
+    completed: {type: Boolean, default: false},
+    assignedUser: {type: String, default: ""},
+    assignedUserName: {type: String, default: "unassigned"},
     dateCreated: {type: Date, default: Date.now}
 });
 

@@ -12,7 +12,7 @@ Here is the User Schema:
 var UserSchema = new mongoose.Schema({
     name: String,
     email: String,
-    pendingTasks: [String],
+    pendingTasks: { type: [String], default: [] },
     dateCreated: { type: Date, default: Date.now }
 });
 
