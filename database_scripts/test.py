@@ -146,6 +146,7 @@ def main(argv):
     assert(d['data'][0]['email']==firstNames[0]+"@"+lastNames[0]+".com")
     assert(d['data'][1]['email']==firstNames[1]+"@"+lastNames[1]+".com")
 
+    # Test query
     conn.request("GET","""/api/users?filter={"_id":1}""")
     response = conn.getresponse()
     data = response.read()
@@ -163,6 +164,73 @@ def main(argv):
     assert(d['data'][4]['name']==userNames[4])
     assert(d['data'][0]['email']==firstNames[0]+"@"+lastNames[0]+".com")
     assert(d['data'][1]['email']==firstNames[1]+"@"+lastNames[1]+".com")
+
+    # Test query
+    conn.request("GET", """http://localhost:4000/api/users?sort={"name":1}""")
+    response = conn.getresponse()
+    data = response.read()
+    d = json.loads(data)
+    assert(response.status == 200)
+    assert(d['data'][0]['name'] == userNames[0])
+    assert(d['data'][1]['name'] == userNames[1])
+    assert(d['data'][2]['name'] == userNames[3])
+    assert(d['data'][3]['name'] == userNames[2])
+
+    conn.request("GET", """http://localhost:4000/api/users?sort={"name":-1}""")
+    response = conn.getresponse()
+    data = response.read()
+    d = json.loads(data)
+    assert(response.status == 200)
+    assert(d['data'][0]['name'] == userNames[4])
+    assert(d['data'][1]['name'] == userNames[2])
+    assert(d['data'][2]['name'] == userNames[3])
+    assert(d['data'][3]['name'] == userNames[1])
+    assert(d['data'][4]['name'] == userNames[0])
+
+    # Test query with limit
+    conn.request("GET", """http://localhost:4000/api/users?sort={"name":1}&limit=2""")
+    response = conn.getresponse()
+    data = response.read()
+    d = json.loads(data)
+    assert(response.status == 200)
+    assert(d['data'][0]['name'] == userNames[0])
+    assert(d['data'][1]['name'] == userNames[1])
+    assert(len(d['data']) == 2)
+
+    # Test query with skip
+    conn.request("GET", """http://localhost:4000/api/users?sort={"name":1}&skip=2""")
+    response = conn.getresponse()
+    data = response.read()
+    d = json.loads(data)
+    assert(response.status == 200)
+    print(d['data'])
+    assert(d['data'][0]['name'] == userNames[3])
+    assert(d['data'][1]['name'] == userNames[2])
+    assert(len(d['data']) == 3)
+
+    # Test count
+    conn.request("GET", """http://localhost:4000/api/users?count=true""")
+    response = conn.getresponse()
+    data = response.read()
+    d = json.loads(data)
+    assert(response.status == 200)
+    assert(d['data'] == 5)
+
+    # Test count
+    conn.request("GET", """http://localhost:4000/api/users?count=true&limit=3""")
+    response = conn.getresponse()
+    data = response.read()
+    d = json.loads(data)
+    assert(response.status == 200)
+    assert(d['data'] == 3)
+
+    # Test count
+    conn.request("GET", """http://localhost:4000/api/users?count=true&skip=3""")
+    response = conn.getresponse()
+    data = response.read()
+    d = json.loads(data)
+    assert(response.status == 200)
+    assert(d['data'] == 2)
 
     # Insert an incomplete user
     params = urllib.parse.urlencode({'name': "", 'email': "test@test.com"})
