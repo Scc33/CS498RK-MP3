@@ -242,10 +242,11 @@ module.exports = function (router) {
             } else {
                 res.status(404).json({
                     "message": "Error that task cannot be found",
-                    "data": err
+                    "data": ""
                 }).send();
             }
         } catch (err) {
+            console.log(err)
             res.status(500).json({
                 "message": "Something weird happened behind the scenes",
                 "data": err
@@ -451,35 +452,44 @@ module.exports = function (router) {
 
     individualUserRoute.delete(async function (req, res) {
         try {
-            var u = await user.find({ _id: req.params.id });
-            var tasks = u[0].pendingTasks;
-            for (var i = 0; i < tasks.length; i++) {
-                var t = await task.findOne({ _id: tasks[i] });
-                if (t) {
-                    t.assignedUser = "";
-                    t.assignedUserName = "unassigned"
-                    var updateTask = await t.save();
-                    if (updateTask === null) {
-                        res.status(500).json({
-                            "message": "Error something strange happened behind the scenes",
-                            "data": err
-                        });
+            var u = await user.findOne({ _id: req.params.id });
+            if (u) {
+                var tasks = u.pendingTasks;
+                for (var i = 0; i < tasks.length; i++) {
+                    var t = await task.findOne({ _id: tasks[i] });
+                    if (t) {
+                        t.assignedUser = "";
+                        t.assignedUserName = "unassigned"
+                        var updateTask = await t.save();
+                        if (updateTask === null) {
+                            res.status(500).json({
+                                "message": "Error something strange happened behind the scenes",
+                                "data": err
+                            });
+                        }
                     }
                 }
-            }
-            var result = await user.deleteOne({ _id: req.params.id }).exec();
-            if (result.deletedCount === 0) {
+                var result = await user.deleteOne({ _id: req.params.id }).exec();
+                if (result.deletedCount === 0) {
+                    res.status(404).json({
+                        "message": "Error that user cannot be found",
+                        "data": ""
+                    });
+                } else {
+                    res.status(200).json({
+                        "message": "Ok",
+                        "data": result
+                    });
+                }
+            } else {
                 res.status(404).json({
                     "message": "Error that user cannot be found",
-                    "data": err
-                });
-            } else {
-                res.status(200).json({
-                    "message": "Ok",
-                    "data": result
+                    "data": ""
                 });
             }
+            
         } catch (err) {
+            console.log(err)
             res.status(500).json({
                 "message": "Error something strange happened behind the scenes",
                 "data": err
