@@ -90,9 +90,13 @@ module.exports = function (router) {
                             "data": result
                         });
                     } else {
-                        res.status(400).json({
-                            "message": "Error, that user doesn't exist or the name and id don't match",
-                            "data": req.body
+                        req.body.assignedUserName = "unassigned";
+                        req.body.assignedUser = "";
+                        t = new task(req.body);
+                        result = await t.save();
+                        res.status(201).json({
+                            "message": "Task created but with no assigned user",
+                            "data": result
                         });
                     }
                 } else {
@@ -112,7 +116,7 @@ module.exports = function (router) {
         } else {
             console.log(req.body);
             res.status(400).json({
-                "message": "Error, you need to provide a name and deadline",
+                "message": "Missing fields, need name and deadline to post a task",
                 "data": req.body
             });
         }
@@ -174,9 +178,13 @@ module.exports = function (router) {
                         });
                     }
                 } else {
-                    res.status(400).json({
-                        "message": "Error, that user doesn't exist",
-                        "data": req.body
+                    req.body.assignedUserName = "unassigned";
+                    req.body.assignedUser = "";
+                    t = new task(req.body);
+                    result = await t.save();
+                    res.status(200).json({
+                        "message": "Task updated but with no assigned user",
+                        "data": result
                     });
                 }
             } catch (err) {
@@ -188,7 +196,7 @@ module.exports = function (router) {
             }
         } else {
             res.status(400).json({
-                "message": "Error, you need to provide a name and deadline",
+                "message": "Missing fields, need name and deadline to put a task",
                 "data": ""
             });
         }
