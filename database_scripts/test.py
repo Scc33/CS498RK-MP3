@@ -232,6 +232,73 @@ def main(argv):
     assert(response.status == 200)
     assert(d['data'] == 2)
 
+    # Test query
+    conn.request("GET", """http://localhost:4000/api/tasks?sort={"name":1}""")
+    response = conn.getresponse()
+    data = response.read()
+    d = json.loads(data)
+    assert(response.status == 200)
+    assert(d['data'][0]['name'] == taskName[0])
+    assert(d['data'][1]['name'] == taskName[1])
+    assert(d['data'][2]['name'] == taskName[2])
+    assert(d['data'][3]['name'] == taskName[3])
+
+    conn.request("GET", """http://localhost:4000/api/tasks?sort={"name":-1}""")
+    response = conn.getresponse()
+    data = response.read()
+    d = json.loads(data)
+    assert(response.status == 200)
+    assert(d['data'][0]['name'] == taskName[4])
+    assert(d['data'][1]['name'] == taskName[3])
+    assert(d['data'][2]['name'] == taskName[2])
+    assert(d['data'][3]['name'] == taskName[1])
+    assert(d['data'][4]['name'] == taskName[0])
+
+    # Test query with limit
+    conn.request("GET", """http://localhost:4000/api/tasks?sort={"name":1}&limit=2""")
+    response = conn.getresponse()
+    data = response.read()
+    d = json.loads(data)
+    assert(response.status == 200)
+    assert(d['data'][0]['name'] == taskName[0])
+    assert(d['data'][1]['name'] == taskName[1])
+    assert(len(d['data']) == 2)
+
+    # Test query with skip
+    conn.request("GET", """http://localhost:4000/api/tasks?sort={"name":1}&skip=2""")
+    response = conn.getresponse()
+    data = response.read()
+    d = json.loads(data)
+    assert(response.status == 200)
+    print(d['data'])
+    assert(d['data'][0]['name'] == taskName[2])
+    assert(d['data'][1]['name'] == taskName[3])
+    assert(len(d['data']) == 3)
+
+    # Test count
+    conn.request("GET", """http://localhost:4000/api/tasks?count=true""")
+    response = conn.getresponse()
+    data = response.read()
+    d = json.loads(data)
+    assert(response.status == 200)
+    assert(d['data'] == 5)
+
+    # Test count
+    conn.request("GET", """http://localhost:4000/api/tasks?count=true&limit=3""")
+    response = conn.getresponse()
+    data = response.read()
+    d = json.loads(data)
+    assert(response.status == 200)
+    assert(d['data'] == 3)
+
+    # Test count
+    conn.request("GET", """/api/tasks?count=true&skip=3""")
+    response = conn.getresponse()
+    data = response.read()
+    d = json.loads(data)
+    assert(response.status == 200)
+    assert(d['data'] == 2)
+
     # Test update (valid)
     params = urllib.parse.urlencode({'name': "myname", 'email': "myname@test.com"})
     conn.request("POST", "/api/users", params, headers)
@@ -426,6 +493,20 @@ def main(argv):
     print(response.status)
     print(d)
     assert(response.status == 404)
+
+    # Delete a task that doesn't belong to the user
+    params = urllib.parse.urlencode({'name': "unrelated", 'deadline': taskDeadline[i]})
+    conn.request("POST", "/api/tasks", params, headers)
+    response = conn.getresponse()
+    data = response.read()
+    d = json.loads(data)
+    taskID = d["data"]["_id"]
+    assert(response.status == 201)
+    conn.request("DELETE", "/api/tasks/" + taskID)
+    response = conn.getresponse()
+    data = response.read()
+    d = json.loads(data)
+    assert(response.status == 200)
 
     # Delete a user and check accompying tasks
     # breakpoint()

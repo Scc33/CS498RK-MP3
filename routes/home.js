@@ -129,7 +129,7 @@ module.exports = function (router) {
             if (result === null) {
                 res.status(404).json({
                     "message": "Error that task cannot be found",
-                    "data": err
+                    "data": ""
                 });
             } else {
                 res.status(200).json({
@@ -138,8 +138,8 @@ module.exports = function (router) {
                 });
             }
         } catch (err) {
-            res.status(404).json({
-                "message": "Error that task cannot be found",
+            res.status(500).json({
+                "message": "Error some backend issue",
                 "data": err
             });
         }
