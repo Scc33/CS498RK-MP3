@@ -73,16 +73,12 @@ module.exports = function (router) {
             var t = new task(req.body);
             let result;
             try {
-                //console.log(req.body, req.body.assignedUser);
                 if (req.body.assignedUser) {
                     var u = await user.findOne({ _id: req.body.assignedUser });
-                    //console.log(u, req.body.assignedUser);
                     if (u) {
                         result = await t.save();
                         if (u.pendingTasks.indexOf(result._id) === -1) {
-                            console.log("post", u.pendingTasks, result._id);
                             u.pendingTasks.push(result._id);
-                            console.log("post", u.pendingTasks, result._id);
                             var savedUser = await u.save();
                         }
                         res.status(201).json({
@@ -107,14 +103,12 @@ module.exports = function (router) {
                     });
                 }
             } catch (err) {
-                console.log(err)
                 res.status(500).json({
                     "message": "Error, that is something unknown",
                     "data": err
                 });
             }
         } else {
-            console.log(req.body);
             res.status(400).json({
                 "message": "Missing fields, need name and deadline to post a task",
                 "data": req.body
@@ -153,9 +147,7 @@ module.exports = function (router) {
                     var result = await task.findByIdAndUpdate({ _id: req.params.id }, req.body, { new: true }).exec();
                     if (result) {
                         if (u.pendingTasks.indexOf(result._id) === -1) {
-                            console.log("put", u.pendingTasks, result._id);
                             u.pendingTasks.push(result._id);
-                            console.log("put", u.pendingTasks, result._id);
                             var savedUser = await user.findByIdAndUpdate({ _id: req.body.assignedUser }, u, { new: true }).exec();
                         }
                         if (req.body.completed) {
@@ -188,7 +180,6 @@ module.exports = function (router) {
                     });
                 }
             } catch (err) {
-                console.log("put", err)
                 res.status(500).json({
                     "message": "Error, that is something unknown",
                     "data": err
@@ -246,7 +237,6 @@ module.exports = function (router) {
                 }).send();
             }
         } catch (err) {
-            console.log(err)
             res.status(500).json({
                 "message": "Something weird happened behind the scenes",
                 "data": err
@@ -262,7 +252,6 @@ module.exports = function (router) {
     userRoute.get(get);
 
     userRoute.post(async function (req, res) {
-        console.log("userpost", req.body, req.params);
         if (req.body.name && req.body.email) {
             var searchEmail = await user.find({ "email": req.body.email });
             if (searchEmail.length !== 0) {
@@ -271,14 +260,12 @@ module.exports = function (router) {
                     "data": searchEmail
                 });
             } else {
-                console.log("userPost", typeof (req.body.pendingTasks), req.body.pendingTasks)
                 var u = new user(req.body);
                 let result;
 
                 try {
                     result = await u.save()
                 } catch (err) {
-                    console.log(err)
                     res.status(500).json({
                         "message": "Error, something bad happened",
                         "data": err
@@ -312,19 +299,14 @@ module.exports = function (router) {
                             }
                         }
                     } else {
-                        console.log("userPostPending", req.body.pendingTasks)
                         var t = await task.findOne({ _id: req.body.pendingTasks });
-                        console.log(t);
                         if (t) {
                             if (t.completed) {
                                 req.body.pendingTasks = [];
                             } else {
-                                console.log("not completed", t, t.completed)
                                 t.assignedUser = req.body._id;
                                 t.assignedUserName = req.body.name;
-                                console.log("not completed", t, t.completed)
                                 var updatedTask = await task.findByIdAndUpdate({ _id: t._id }, t, { new: true }).exec();
-                                //console.log(updatedTask._id);
                             }
                         } else {
                             req.body.pendingTasks = [];
@@ -338,7 +320,6 @@ module.exports = function (router) {
                             "data": result
                         })
                     } catch (err) {
-                        console.log(err)
                         res.status(500).json({
                             "message": "Error, something bad happened",
                             "data": err
@@ -370,7 +351,6 @@ module.exports = function (router) {
                 });
             }
         } catch (err) {
-            console.log(err)
             res.status(500).json({
                 "message": "Error something strange happened behind the scenes",
                 "data": err
@@ -379,7 +359,6 @@ module.exports = function (router) {
     });
 
     individualUserRoute.put(async function (req, res) {
-        console.log("userput", req.body, req.params);
         if (req.body.name && req.body.email) {
             var searchEmail = await user.find({ "email": req.body.email });
             if (searchEmail.length !== 0 && JSON.stringify(searchEmail[0]._id) !== JSON.stringify(req.params.id)) {
@@ -393,14 +372,11 @@ module.exports = function (router) {
                     if (oldUser) {
                         if (!req.body.pendingTasks) {
                             req.body.pendingTasks = oldUser.pendingTasks;
-                            console.log(req.body.pendingTasks)
                             if (!req.body.pendingTasks) {
                                 req.body.pendingTasks = [];
                             }
                         }
-                        console.log("no new tasks given so finding old", req.body.pendingTasks)
                         var t = await task.find({ assignedUser: req.params.id });
-                        console.log(t, req.body.pendingTasks);
                         if (t && req.body.pendingTasks) {
                             for (let i = 0; i < t.length; i++) {
                                 if (t[i].completed) {
@@ -415,11 +391,8 @@ module.exports = function (router) {
                                         req.body.pendingTasks = [];
                                     }
                                 }
-                                console.log(t[i])
                                 t[i].assignedUser = req.params.id;
                                 t[i].assignedUserName = req.body.name;
-                                console.log(t[i])
-                                console.log(t[i]._id)
                                 const taskUpdated = task.findByIdAndUpdate({ _id: t[i]._id }, { $set: t[i] }, { new: true }).exec();
                             }
                         }
@@ -443,7 +416,6 @@ module.exports = function (router) {
                         });
                     }
                 } catch (err) {
-                    console.log(err)
                     res.status(500).json({
                         "message": "Error something strange happened behind the scenes",
                         "data": err
@@ -497,7 +469,6 @@ module.exports = function (router) {
             }
             
         } catch (err) {
-            console.log(err)
             res.status(500).json({
                 "message": "Error something strange happened behind the scenes",
                 "data": err
