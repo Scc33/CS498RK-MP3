@@ -174,7 +174,7 @@ module.exports = function (router) {
                     } else {
                         res.status(404).json({
                             "message": "Error that task cannot be found",
-                            "data": err
+                            "data": ""
                         });
                     }
                 } else {
@@ -389,50 +389,57 @@ module.exports = function (router) {
                 });
             } else {
                 try {
-                    if (!req.body.pendingTasks) {
-                        var oldUser = await user.findById({ _id: req.params.id });
-                        req.body.pendingTasks = oldUser.pendingTasks;
-                        console.log(req.body.pendingTasks)
+                    var oldUser = await user.findById({ _id: req.params.id });
+                    if (oldUser) {
                         if (!req.body.pendingTasks) {
-                            req.body.pendingTasks = [];
-                        }
-                    }
-                    console.log("no new tasks given so finding old", req.body.pendingTasks)
-                    var t = await task.find({ assignedUser: req.params.id });
-                    console.log(t, req.body.pendingTasks);
-                    if (t && req.body.pendingTasks) {
-                        for (let i = 0; i < t.length; i++) {
-                            if (t[i].completed) {
-                                if (Array.isArray(req.body.pendingTasks)) {
-                                    var arr = req.body.pendingTasks;
-                                    var index = arr.indexOf(req.body.pendingTasks[i]);
-                                    if (index > -1) {
-                                        arr.splice(index, 1);
-                                    }
-                                    req.body.pendingTasks = arr;
-                                } else {
-                                    req.body.pendingTasks = [];
-                                }
+                            req.body.pendingTasks = oldUser.pendingTasks;
+                            console.log(req.body.pendingTasks)
+                            if (!req.body.pendingTasks) {
+                                req.body.pendingTasks = [];
                             }
-                            console.log(t[i])
-                            t[i].assignedUser = req.params.id;
-                            t[i].assignedUserName = req.body.name;
-                            console.log(t[i])
-                            console.log(t[i]._id)
-                            const taskUpdated = task.findByIdAndUpdate({ _id: t[i]._id }, { $set: t[i] }, { new: true }).exec();
                         }
-                    }
-
-                    let result = await user.findByIdAndUpdate({ _id: req.params.id }, { $set: req.body }, { new: true }).exec();
-                    if (result) {
-                        res.status(200).json({
-                            "message": "Ok",
-                            "data": result
-                        });
+                        console.log("no new tasks given so finding old", req.body.pendingTasks)
+                        var t = await task.find({ assignedUser: req.params.id });
+                        console.log(t, req.body.pendingTasks);
+                        if (t && req.body.pendingTasks) {
+                            for (let i = 0; i < t.length; i++) {
+                                if (t[i].completed) {
+                                    if (Array.isArray(req.body.pendingTasks)) {
+                                        var arr = req.body.pendingTasks;
+                                        var index = arr.indexOf(req.body.pendingTasks[i]);
+                                        if (index > -1) {
+                                            arr.splice(index, 1);
+                                        }
+                                        req.body.pendingTasks = arr;
+                                    } else {
+                                        req.body.pendingTasks = [];
+                                    }
+                                }
+                                console.log(t[i])
+                                t[i].assignedUser = req.params.id;
+                                t[i].assignedUserName = req.body.name;
+                                console.log(t[i])
+                                console.log(t[i]._id)
+                                const taskUpdated = task.findByIdAndUpdate({ _id: t[i]._id }, { $set: t[i] }, { new: true }).exec();
+                            }
+                        }
+    
+                        let result = await user.findByIdAndUpdate({ _id: req.params.id }, { $set: req.body }, { new: true }).exec();
+                        if (result) {
+                            res.status(200).json({
+                                "message": "Ok",
+                                "data": result
+                            });
+                        } else {
+                            res.status(404).json({
+                                "message": "Error that user cannot be found",
+                                "data": ""
+                            });
+                        }
                     } else {
                         res.status(404).json({
                             "message": "Error that user cannot be found",
-                            "data": err
+                            "data": ""
                         });
                     }
                 } catch (err) {
@@ -465,7 +472,7 @@ module.exports = function (router) {
                         if (updateTask === null) {
                             res.status(500).json({
                                 "message": "Error something strange happened behind the scenes",
-                                "data": err
+                                "data": ""
                             });
                         }
                     }

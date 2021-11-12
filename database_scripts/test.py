@@ -355,6 +355,24 @@ def main(argv):
     d = json.loads(data)
     assert(response.status == 404)
 
+    # Put invalid user
+    params = urllib.parse.urlencode({'name': "mynamebad", 'email': 'fakeEmail'})
+    conn.request("PUT", """/api/users/41224d776a326fb40f000001""", params, headers)
+    response = conn.getresponse()
+    data = response.read()
+    d = json.loads(data)
+    print(response.status, d)
+    assert(response.status == 404)
+
+    # Put invalid task
+    params = urllib.parse.urlencode({'name': "mynamebad", 'deadline': taskDeadline[0]})
+    conn.request("GET", """/api/tasks/41224d776a326fb40f000001""")
+    response = conn.getresponse()
+    data = response.read()
+    d = json.loads(data)
+    assert(response.status == 404)
+
+
     # Insert an incomplete user
     params = urllib.parse.urlencode({'name': "", 'email': "test@test.com"})
     conn.request("POST", "/api/users", params, headers)
