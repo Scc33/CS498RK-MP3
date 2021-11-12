@@ -219,10 +219,10 @@ module.exports = function (router) {
                     }
                     u.pendingTasks = arr;
                     var updateTask = await u.save();
-                    if (updateTask === null) {
+                    if (updateTask == null) {
                         res.status(500).json({
                             "message": "Error something strange happened behind the scenes",
-                            "data": err
+                            "data": ""
                         });
                     }
                 }
@@ -231,7 +231,7 @@ module.exports = function (router) {
                 if (result.deletedCount === 0) {
                     res.status(404).json({
                         "message": "Error that task cannot be found",
-                        "data": err
+                        "data": ""
                     });
                 } else {
                     res.status(200).json({
@@ -361,7 +361,7 @@ module.exports = function (router) {
             if (result === null) {
                 res.status(404).json({
                     "message": "Error that user cannot be found",
-                    "data": err
+                    "data": ""
                 });
             } else {
                 res.status(200).json({
@@ -370,6 +370,7 @@ module.exports = function (router) {
                 });
             }
         } catch (err) {
+            console.log(err)
             res.status(500).json({
                 "message": "Error something strange happened behind the scenes",
                 "data": err
