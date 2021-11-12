@@ -152,6 +152,25 @@ def main(argv):
             data = response.read()
             d = json.loads(data)
 
+    conn.request("GET", """/api/tasks?where={"completed":true}""")
+    response = conn.getresponse()
+    data = response.read()
+    d = json.loads(data)
+    for i in d['data']:
+        assert(i['completed'] == True)
+
+    conn.request("GET", """/api/users?sort={"name":1}""")
+    response = conn.getresponse()
+    data = response.read()
+    d = json.loads(data)
+    assert(d['data'][0]['name'] < d['data'][1]['name'])
+
+    conn.request("GET","/api/tasks?skip=60&limit=20")
+    response = conn.getresponse()
+    data = response.read()
+    d = json.loads(data)
+    assert(len(d['data']) == 20)
+
     # Exit gracefully
     conn.close()
     print(str(userCount)+" users and "+str(taskCount)+" tasks added at "+baseurl+":"+str(port))

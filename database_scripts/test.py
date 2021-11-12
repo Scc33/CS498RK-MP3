@@ -372,6 +372,21 @@ def main(argv):
     d = json.loads(data)
     assert(response.status == 404)
 
+    # Multiple email
+    params = urllib.parse.urlencode({'name': "myname", 'email': "repeat"})
+    conn.request("POST", "/api/users", params, headers)
+    response = conn.getresponse()
+    data = response.read()
+    d = json.loads(data)
+    print(response.status, d)
+    assert(response.status == 201)
+    params = urllib.parse.urlencode({'name': "myname", 'email': "repeat"})
+    conn.request("POST", "/api/users", params, headers)
+    response = conn.getresponse()
+    data = response.read()
+    d = json.loads(data)
+    print(response.status, d)
+    assert(response.status == 400)
 
     # Insert an incomplete user
     params = urllib.parse.urlencode({'name': "", 'email': "test@test.com"})
