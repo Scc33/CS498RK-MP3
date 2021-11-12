@@ -273,6 +273,7 @@ module.exports = function (router) {
                 }
 
                 if (u.pendingTasks) {
+                    console.log("pending tasks", req.body.pendingTasks, Array.isArray(req.body.pendingTasks));
                     if (Array.isArray(req.body.pendingTasks)) {
                         for (var i = 0; i < req.body.pendingTasks.length; i++) {
                             var t = await task.findOne({ _id: req.body.pendingTasks[i] });
@@ -285,9 +286,22 @@ module.exports = function (router) {
                                     }
                                     req.body.pendingTasks = arr;
                                 } else {
+                                    if (t.assignedUser) {
+                                        var oldU = await user.findOne({ _id: t.assignedUser });
+                                        console.log(oldU)
+                                        if (oldU) {
+                                            var arr = oldU.pendingTasks;
+                                            var index = arr.indexOf(req.body.pendingTasks);
+                                            if (index > -1) {
+                                                arr.splice(index, 1);
+                                            }
+                                            oldU.pendingTasks = arr;
+                                            var updatedTask = await task.findByIdAndUpdate({ _id: oldU._id }, oldU, { new: true }).exec();
+                                        }
+                                    }
                                     t.assignedUser = req.body._id;
                                     t.assignedUserName = req.body.name;
-                                    var updatedTask = await task.findByIdAndUpdate({ _id: t._id }, t, { new: true }).exec();
+                                    var updatedTask = await user.findByIdAndUpdate({ _id: t._id }, t, { new: true }).exec();
                                 }
                             } else {
                                 var arr = req.body.pendingTasks;
@@ -300,13 +314,30 @@ module.exports = function (router) {
                         }
                     } else {
                         var t = await task.findOne({ _id: req.body.pendingTasks });
+                        console.log(t)
                         if (t) {
                             if (t.completed) {
                                 req.body.pendingTasks = [];
                             } else {
-                                t.assignedUser = req.body._id;
+                                if (t.assignedUser) {
+                                    var oldU = await user.findOne({ _id: t.assignedUser });
+                                    console.log(oldU, req.body.pendingTasks)
+                                    if (oldU) {
+                                        var arr = oldU.pendingTasks;
+                                        var index = arr.indexOf(req.body.pendingTasks);
+                                        if (index > -1) {
+                                            arr.splice(index, 1);
+                                        }
+                                        oldU.pendingTasks = arr;
+                                        console.log("updated", oldU)
+                                        var updatedTask = await user.findByIdAndUpdate({ _id: oldU._id }, oldU, { new: true }).exec();
+                                    }
+                                }
+                                t.assignedUser = u._id;
                                 t.assignedUserName = req.body.name;
+                                console.log(t)
                                 var updatedTask = await task.findByIdAndUpdate({ _id: t._id }, t, { new: true }).exec();
+                                console.log(updatedTask)
                             }
                         } else {
                             req.body.pendingTasks = [];
@@ -359,6 +390,7 @@ module.exports = function (router) {
     });
 
     individualUserRoute.put(async function (req, res) {
+        console.log(req.params, req.body)
         if (req.body.name && req.body.email) {
             var searchEmail = await user.find({ "email": req.body.email });
             if (searchEmail.length !== 0 && JSON.stringify(searchEmail[0]._id) !== JSON.stringify(req.params.id)) {
@@ -369,6 +401,7 @@ module.exports = function (router) {
             } else {
                 try {
                     var oldUser = await user.findById({ _id: req.params.id });
+                    console.log(oldUser)
                     if (oldUser) {
                         if (!req.body.pendingTasks) {
                             req.body.pendingTasks = oldUser.pendingTasks;
@@ -376,27 +409,66 @@ module.exports = function (router) {
                                 req.body.pendingTasks = [];
                             }
                         }
-                        var t = await task.find({ assignedUser: req.params.id });
-                        if (t && req.body.pendingTasks) {
-                            for (let i = 0; i < t.length; i++) {
-                                if (t[i].completed) {
-                                    if (Array.isArray(req.body.pendingTasks)) {
-                                        var arr = req.body.pendingTasks;
-                                        var index = arr.indexOf(req.body.pendingTasks[i]);
+                        console.log("pending", req.body.pendingTasks)
+                        if (req.body.pendingTasks) {
+                            if (Array.isArray(req.body.pendingTasks)) {
+                                var arr = req.body.pendingTasks;
+                                for (var i = 0; i < req.body.pendingTasks.length; i++) {
+                                    var t = await task.findOne({ _id: req.body.pendingTasks[i] });
+                                    console.log(req.params, "t", t)
+                                    if (t.completed) {
+                                        if (Array.isArray(req.body.pendingTasks)) {
+                                            var index = arr.indexOf(req.body.pendingTasks[i]);
+                                            if (index > -1) {
+                                                arr.splice(index, 1);
+                                            }
+                                        } else {
+                                            arr = [];
+                                        }
+                                    }
+                                    const removeOldAssignedUser = await user.findOne({ _id: t.assignedUser });
+                                    console.log("older", removeOldAssignedUser)
+                                    if (removeOldAssignedUser) {
+                                        var arr = removeOldAssignedUser.pendingTasks;
+                                        var index = arr.indexOf(t._id);
                                         if (index > -1) {
                                             arr.splice(index, 1);
                                         }
-                                        req.body.pendingTasks = arr;
-                                    } else {
-                                        req.body.pendingTasks = [];
+                                        removeOldAssignedUser.pendingTasks = arr;
+                                        console.log("updated older", updatedUser)
+                                        var updatedUser = await user.findByIdAndUpdate({ _id: removeOldAssignedUser._id }, removeOldAssignedUser, { new: true }).exec();
                                     }
+                                    t.assignedUser = req.params.id;
+                                    t.assignedUserName = req.body.name;
+                                    console.log("t2", t)
+                                    const taskUpdated = task.findByIdAndUpdate({ _id: t._id }, t, { new: true }).exec();
                                 }
-                                t[i].assignedUser = req.params.id;
-                                t[i].assignedUserName = req.body.name;
-                                const taskUpdated = task.findByIdAndUpdate({ _id: t[i]._id }, { $set: t[i] }, { new: true }).exec();
+                                req.body.pendingTasks = arr;
+                            } else {
+                                var t = await task.findOne({ _id: req.body.pendingTasks });
+                                const removeOldAssignedUser = await user.findOne({ _id: t.assignedUser });
+                                console.log("older", removeOldAssignedUser)
+                                if (removeOldAssignedUser) {
+                                    var arr = removeOldAssignedUser.pendingTasks;
+                                    var index = arr.indexOf(t._id);
+                                    if (index > -1) {
+                                        arr.splice(index, 1);
+                                    }
+                                    removeOldAssignedUser.pendingTasks = arr;
+                                    var updatedUser = await user.findByIdAndUpdate({ _id: removeOldAssignedUser._id }, removeOldAssignedUser, { new: true }).exec();
+                                    console.log("updated older", updatedUser)
+                                }
+                                if (t.completed) {
+                                    req.body.pendingTasks = [];
+                                } else {
+                                    t.assignedUser = req.params.id;
+                                    t.assignedUserName = req.body.name;
+                                    const taskUpdated = await task.findByIdAndUpdate({ _id: t._id }, t, { new: true }).exec();
+                                }
                             }
+
                         }
-    
+
                         let result = await user.findByIdAndUpdate({ _id: req.params.id }, { $set: req.body }, { new: true }).exec();
                         if (result) {
                             res.status(200).json({
@@ -416,6 +488,7 @@ module.exports = function (router) {
                         });
                     }
                 } catch (err) {
+                    console.log(err)
                     res.status(500).json({
                         "message": "Error something strange happened behind the scenes",
                         "data": err
@@ -467,7 +540,7 @@ module.exports = function (router) {
                     "data": ""
                 });
             }
-            
+
         } catch (err) {
             res.status(500).json({
                 "message": "Error something strange happened behind the scenes",
